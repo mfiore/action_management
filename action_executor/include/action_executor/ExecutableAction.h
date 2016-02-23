@@ -37,23 +37,29 @@ protected:
 	Server action_server_;
 	Client motion_execution_client_;
 
+	string robot_name_;
+
 	void setResult(string status, string details, bool ok);
 	void sendFeedback(string status, string details);
 
 	virtual bool shouldStop(StringMap parameters)=0;
-	bool handleMotionRequest(action_management_msgs::ManageActionGoalConstPtr& goal);
+	action_management_msgs::ManageActionResultConstPtr handleMotionRequest(action_management_msgs::ManageActionGoalConstPtr& goal);
+	action_management_msgs::ManageActionResultConstPtr handleOtherActionRequest(action_management_msgs::ManageActionGoalConstPtr& goal, Client *action_client);
 
+
+	bool isResultSuccessfull(action_management_msgs::ManageActionResultConstPtr result);
 
 	bool checkActionName(string name);
 
+	bool abortIfFailed(action_management_msgs::ManageActionResultConstPtr result);
 
 	private:
-	void motionExecutionDoneCB(const actionlib::SimpleClientGoalState& state,
+	void clientExecutionDoneCB(const actionlib::SimpleClientGoalState& state,
 				const action_management_msgs::ManageActionResultConstPtr& result);
-	boost::mutex mutex_is_motion_done_;
-	bool is_motion_done_;
+	boost::mutex mutex_is_client_done_;
+	bool is_client_done_;
 
-	bool isMotionDone();
+	bool isClientDone();
 
 };
 

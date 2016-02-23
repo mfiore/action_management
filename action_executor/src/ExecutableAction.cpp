@@ -6,8 +6,12 @@ ExecutableAction::ExecutableAction(string action_name, ros::NodeHandle node_hand
 	this, _1), false),
 	motion_execution_client_("motion/motion_plan_execute",true)
  {
+ 	string up_action=boost::to_upper_copy(action_name);
+
+ 	ROS_INFO("%s Waiting for motion to be ready",up_action.c_str());
+ 	motion_execution_client_.waitForServer();
  	action_server_.start();
- 	ROS_INFO("Started action server");
+ 	ROS_INFO("%s Started action server",up_action.c_str());
 }
 
 void ExecutableAction::setResult(string status, string details, bool ok) {
@@ -35,40 +39,44 @@ void ExecutableAction::sendFeedback(string status, string details) {
 }
 
 
-void ExecutableAction::motionExecutionDoneCB(const actionlib::SimpleClientGoalState& state,
+void ExecutableAction::clientExecutionDoneCB(const actionlib::SimpleClientGoalState& state,
 		const action_management_msgs::ManageActionResultConstPtr& result) {
-	boost::lock_guard<boost::mutex> lock(mutex_is_motion_done_);
-	is_motion_done_=true;
+	boost::lock_guard<boost::mutex> lock(mutex_is_client_done_);
+	is_client_done_=true;
 }
 
-bool ExecutableAction::isMotionDone() {
-	boost::lock_guard<boost::mutex> lock(mutex_is_motion_done_);
-	return is_motion_done_;
+bool ExecutableAction::isClientDone() {
+	boost::lock_guard<boost::mutex> lock(mutex_is_client_done_);
+	return is_client_done_;
 }
 
-bool ExecutableAction::handleMotionRequest(action_management_msgs::ManageActionGoalConstPtr& goal) {
+action_management_msgs::ManageActionResultConstPtr ExecutableAction::handleMotionRequest(action_management_msgs::ManageActionGoalConstPtr& goal) {	
+	return handleOtherActionRequest(goal,motion_execution_client_);
+}
+action_management_msgs::ManageActionResultConstPtr handleOtherActionRequest(action_management_msgs::ManageActionGoalConstPtr& goal, Client *action_client) {
+
 	action_management_msgs::ManageActionGoal goal_translated;
 	goal_translated.action=goal->action;
-	motion_execution_client_.sendGoal(goal_translated,boost::bind(&ExecutableAction::motionExecutionDoneCB,this,_1,_2),
+	client->sendGoal(goal_translated,boost::bind(&ExecutableAction::clientExecutionDoneCB,this,_1,_2),
 		Client::SimpleActiveCallback(),Client::SimpleFeedbackCallback());
 
 	StringMap parameters=extractParametersFromMsg(goal->action.parameters);
 	ros::Rate r(3);
-	while (!isMotionDone() && !action_server_.isPreemptRequested() && ros::ok() && !shouldStop(parameters)) {
+	while (!isClientDone() && !action_server_.isPreemptRequested() && ros::ok() && !shouldStop(parameters)) {
 		r.sleep();
 	}
 	if (action_server_.isPreemptRequested()) {
-		motion_execution_client_.cancelGoal();
+		client->cancelGoal();
 		setResult("PREEMPTED","",false);
 		action_server_.setPreempted(result_);
-		return false;
+		return result_;
 	}
 	else if (!ros::ok()) {
 		action_server_.setAborted();
-		return false;
+		return result_;
 	}
-	action_management_msgs::ManageActionResultConstPtr motion_result=motion_execution_client_.getResult();
-	return motion_result->report.status=="COMPLETED"; 
+	action_management_msgs::ManageActionResultConstPtr result=client->getResult();
+	return result;
 }
 bool ExecutableAction::checkActionName(string name) {
 	if (name!=action_name_) {
@@ -78,5 +86,17 @@ bool ExecutableAction::checkActionName(string name) {
 	}
 	return true;
 }
+bool ExecutableAction::isResultSuccessfull(action_management_msgs::ManageActionResultConstPtr result) {
+	return result.status=="COMPLETED";
+}
+bool ExecutableAction::abortIfFailed(action_management_msgs::ManageActionResultConstPtr result) {
+	if (!isResultSuccessfull(result)) {
+		setResult("FAILED",result->report.details,false);
+		action_server_.setAborted(result_);
+		return false;
+	}
+	return true;
+}
+
 
 
