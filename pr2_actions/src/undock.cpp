@@ -25,7 +25,7 @@ bool Undock::checkPreconditions(StringMap parameters) {
 	return srv.response.result.size()>0;
 }
 
-bool Undock::setPostconditions(StringMap parameters) {
+void Undock::setPostconditions(StringMap parameters) {
 	situation_assessment_msgs::DatabaseRequest srv_add,srv_remove;
 	situation_assessment_msgs::Fact f_to_add,f_to_remove;
 	f_to_add.model=robot_name_;
@@ -54,20 +54,18 @@ bool Undock::setPostconditions(StringMap parameters) {
 
 void Undock::execute(const action_management_msgs::ManageActionGoalConstPtr& goal) {
 	if (!checkActionName(goal->action.name)) return;
-	StringMap parameters=extractParametersFromMsg(goal->parameters);
+	StringMap parameters=extractParametersFromMsg(goal->action.parameters);
 
 	if (!checkPreconditions(parameters)) {
 		setResult("FAILURE","preconditions not satisfied",false);
-		action_server_->setAborted(result);
+		action_server_.setAborted(result_);
 		return;
 	}
 
 	   //we will be sending commands of type "twist"
 	    geometry_msgs::Twist base_cmd;
 
-	    else if (direction=='b') {
-	        base_cmd.linear.x=-0.2;
-	    }
+        base_cmd.linear.x=-0.2;
 
 	    cmd_vel_pub_.publish(base_cmd);
 
@@ -82,6 +80,6 @@ void Undock::execute(const action_management_msgs::ManageActionGoalConstPtr& goa
 	    cmd_vel_pub_.publish(base_cmd);
 
 		setResult("SUCCEEDED","",true);
-		action_server_.setSucceded(result_);
+		action_server_.setSucceeded(result_);
 	return;
 }

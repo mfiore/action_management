@@ -1,14 +1,17 @@
 #include <pr2_actions/place.h>
 
-Place::Place(ros::NodeHandle node_handle):ExecutableAction("place",node_handle):
-approach_client_("action_management/actions/approach/execute",true) {
+Place::Place(ros::NodeHandle node_handle):ExecutableAction("place",node_handle),
+approach_client_("action_management/actions/approach/execute",true), 
+dock_client_("action_management/actions/dock/execute",true) 
+
+{
 
 	put_object_in_hand_client_=node_handle_.serviceClient<situation_assessment_msgs::PutObjectInHand>("/situation_assessment/put_object_in_hand");
 	ROS_INFO("PLACE waiting for put object in hand service");
 	put_object_in_hand_client_.waitForExistence();
 	
 	ROS_INFO("PLACE waiting for approach action");
-	approach_client.waitForServer();
+	approach_client_.waitForServer();
 	parameters_.push_back("main_object");
 	parameters_.push_back("main_agent");
 	parameters_.push_back("support_object");
@@ -23,7 +26,7 @@ bool Place::checkPreconditions(StringMap parameters) {
 	srv.request.query.value.push_back(parameters["main_object"]);
 
 	if (database_query_client_.call(srv)) {
-		return response.result.size()>0;
+		return srv.response.result.size()>0;
 	}
 	else {
 		ROS_ERROR("PLACE Failed to contact db");
@@ -38,16 +41,16 @@ void Place::setPostconditions(StringMap parameters) {
 	f.value.push_back(parameters["main_object"]);
 
 	situation_assessment_msgs::DatabaseRequest srv;
-	srv.fact_list.push_back(f);
+	srv.request.fact_list.push_back(f);
 	if (!database_remove_facts_client_.call(srv)) {
-		ROS_ERROR("%PLACE failed to contact db");
+		ROS_ERROR("PLACE failed to contact db");
 	} 
 
-	if (parameters["main_agent"]!=robot_name) {
+	if (parameters["main_agent"]!=robot_name_) {
 		situation_assessment_msgs::PutObjectInHand put_object_in_hand_srv;
 		put_object_in_hand_srv.request.object=parameters["main_object"];
 		put_object_in_hand_srv.request.agent=parameters["main_agent"];
-		put_object_in_hand_srv.request.value=false;
+		put_object_in_hand_srv.request.has_object=false;
 		if (!put_object_in_hand_client_.call(put_object_in_hand_srv)){
 			ROS_ERROR("PLACE couldn't call put object in hand service");
 		}
@@ -57,38 +60,35 @@ void Place::setPostconditions(StringMap parameters) {
 	}
 }
 
-bool Place::shouldStop(StringMap parameters) {
-	return false;
-}
 
 
 void Place::execute(const action_management_msgs::ManageActionGoalConstPtr& goal) {
-	Action place_action=goal->action;
+	action_management_msgs::Action place_action=goal->action;
 	if (!checkActionName(place_action.name)) return;
 
-	StringMap parameters=extractParametersFromMsg(place_action=goal.parameters);
+	StringMap parameters=extractParametersFromMsg(goal->action.parameters);
 
 	if (!checkPreconditions(parameters)) {
 		setResult("FAILURE","preconditions not satisfied",false);
-		action_server_->setAborted(result);
+		action_server_.setAborted(result_);
 		return;
 	}
 
 	action_management_msgs::ManageActionGoal approach_goal, dock_goal, place_pose_goal;
-	common_msgs::Parameter object_location_parameter,pose_parameter;
-	placement_location.name="location";
-	placement_location.value=parameters["support_object"];
+	common_msgs::Parameter placement_location_parameter,pose_parameter;
+	placement_location_parameter.name="location";
+	placement_location_parameter.value=parameters["support_object"];
 	pose_parameter.name="pose_name";
 	pose_parameter.value="manipulationPose";
 
 	approach_goal.action.name="approach";
-	approach_goal.action.parameters.push_back(placement_location);
+	approach_goal.action.parameters.push_back(placement_location_parameter);
 
 	place_pose_goal.action.name="moveTo";
 	place_pose_goal.action.parameters.push_back(pose_parameter);
 
 	dock_goal.action.name="dock";
-	dock_goal.action.parameters.push_back(object_location);
+	dock_goal.action.parameters.push_back(placement_location_parameter);
 
 
 	action_management_msgs::ManageActionResultConstPtr action_result;
@@ -98,7 +98,7 @@ void Place::execute(const action_management_msgs::ManageActionGoalConstPtr& goal
 	action_result=handleMotionRequest(place_pose_goal);
 	if (!abortIfFailed(action_result)) return;
 
-	action_result=handleOtherActionRequest(dock_goal);
+	action_result=handleOtherActionRequest(dock_goal,&dock_client_);
 	if (!abortIfFailed(action_result)) return;
 
 	action_result=handleMotionRequest(goal);
@@ -106,7 +106,7 @@ void Place::execute(const action_management_msgs::ManageActionGoalConstPtr& goal
 	if (!abortIfFailed(action_result)) return;
 	setPostconditions(parameters);
 	setResult("COMPLETED","",true);
-	action_server_.setSucceded(result_);
+	action_server_.setSucceeded(result_);
 }
 
 

@@ -1,19 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(pr2_actions)
+project(action_nodes)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  action_nodes
-  action_management_msgs
-  actionlib
-  actionlib_msgs
-  common_msgs
-  motion_msgs
+  message_runtime
   roscpp
   rospy
+  action_management_msgs
+  common_msgs
   situation_assessment_msgs
+  actionlib
+  actionlib_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -50,18 +49,14 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+ # add_message_files(
+   # FILES
+ # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+ # add_service_files(
+   # FILES
+ # )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -73,7 +68,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   action_management_msgs#   actionlib_msgs#   common_msgs#   motion_msgs#   situation_assessment_msgs
+#   shary3_msgs
 # )
 
 ###################################
@@ -87,8 +82,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES pr2_actions
-  CATKIN_DEPENDS action_nodes action_management_msgs actionlib actionlib_msgs common_msgs motion_msgs roscpp rospy situation_assessment_msgs
+  LIBRARIES action_nodes_lib
+  CATKIN_DEPENDS  message_runtime roscpp rospy action_management_msgs situation_assessment_msgs actionlib actionlib_msgs
 #  DEPENDS system_lib
 )
 
@@ -104,20 +99,20 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(pr2_actions
-#   src/${PROJECT_NAME}/pr2_actions.cpp
-# )
+ add_library(action_nodes_lib
+   src/Action.cpp src/ExecutableAction.cpp src/MovementAction.cpp
+ )
 
 ## Declare a cpp executable
- add_executable(pr2_actions src/pr2_actions.cpp src/approach.cpp src/dock.cpp src/pick.cpp src/place.cpp src/undock.cpp)
+# add_executable(action_executor_node src/action_executor_node.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(pr2_actions common_msgs_generate_messages_cpp motion_msgs_generate_messages_cpp 
-situation_assessment_msgs_generate_messages_cpp action_management_msgs_generate_messages_cpp)
+add_dependencies(action_nodes_lib common_msgs_generate_messages_cpp situation_assessment_msgs_generate_messages_cpp 
+action_management_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(pr2_actions
+ target_link_libraries(action_nodes_lib
    ${catkin_LIBRARIES}
  )
 
@@ -136,7 +131,7 @@ situation_assessment_msgs_generate_messages_cpp action_management_msgs_generate_
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS pr2_actions pr2_actions_node
+# install(TARGETS action_executor action_executor_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -161,7 +156,7 @@ situation_assessment_msgs_generate_messages_cpp action_management_msgs_generate_
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_pr2_actions.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_action_executor.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

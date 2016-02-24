@@ -11,7 +11,7 @@ bool Approach::checkPreconditions(StringMap parameters) {
 	return true;
 }
 
-bool Approach::setPostconditions(StringMap parameters) {
+void Approach::setPostconditions(StringMap parameters) {
 	situation_assessment_msgs::DatabaseRequest srv_add,srv_remove;
 	situation_assessment_msgs::Fact f_to_add,f_to_remove;
 	f_to_add.model=robot_name_;
@@ -37,9 +37,9 @@ bool Approach::setPostconditions(StringMap parameters) {
 }
 
 void Approach::execute(const action_management_msgs::ManageActionGoalConstPtr& goal) {
-	if (!checkActionName(pick_action.name)) return;
+	if (!checkActionName(goal->action.name)) return;
 
-	StringMap parameters=extractParametersFromMsg(pick_action=goal.parameters);
+	StringMap parameters=extractParametersFromMsg(goal->action.parameters);
 
 
 	situation_assessment_msgs::QueryDatabase srv_database;
@@ -56,23 +56,23 @@ void Approach::execute(const action_management_msgs::ManageActionGoalConstPtr& g
 	if (srv_database.response.result.size()==0 || srv_database.response.result[0].value.size()<6) {
 		ROS_ERROR("APPROACH location pose not present in the db");
 		setResult("FAILED","location pose not present in the db",false);
-		action_server_->setAborted();
+		action_server_.setAborted();
 		return;
 	} 
 
 	geometry_msgs::Pose pose;
-	pose.position.x=srv_database.response.result[0].value[0];
-	pose.position.y=srv_database.response.result[0].value[1];
+	pose.position.x=boost::lexical_cast<double>(srv_database.response.result[0].value[0]);
+	pose.position.y=boost::lexical_cast<double>(srv_database.response.result[0].value[1]);
 	pose.position.z=0;
 	
-	pose.position.x=srv_database.response.result[0].value[2];
-	pose.orientation= tf::createQuaternionMsgFromRollPitchYaw(srv_database.response.result[0].value[3],
-		srv_database.response.result[0].value[4],
-		srv_database.response.result[0].value[5]);
+	pose.orientation= tf::createQuaternionMsgFromRollPitchYaw(
+		boost::lexical_cast<double>(srv_database.response.result[0].value[3]),
+		boost::lexical_cast<double>(srv_database.response.result[0].value[4]),
+		boost::lexical_cast<double>(srv_database.response.result[0].value[5]));
 
 	if (handleMoveRequest(pose)) {
 		setResult("SUCCEEDED","",true);
-		action_server_.setSucceded(result_);
+		action_server_.setSucceeded(result_);
 	}
 	return;
 }
