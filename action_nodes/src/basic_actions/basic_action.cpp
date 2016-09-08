@@ -1,27 +1,28 @@
-#include <action_nodes/basic_actions/BasicAction.h>
+#include <action_nodes/basic_actions/basic_action.h>
 
-void BasicAction(string action_name):ExecutableAction(action_name) {
+BasicAction::BasicAction(string action_name, ros::NodeHandle node_handle):ExecutableAction(action_name,node_handle) {
 
 }
 
-void BasicAction::execute(const shary3_msgs::ManageActionGoalConstPtr& goal) {
-	Action this_action=goal->action;
+void BasicAction::execute(const action_management_msgs::ManageActionGoalConstPtr& goal) {
+	action_management_msgs::Action this_action=goal->action;
 	if (!checkActionName(this_action.name)) return;
 
-	StringMap parameters=extractParametersFromMsg(this_action=goal.parameters);
+	StringMap parameters=extractParametersFromMsg(this_action.parameters);
 
 	if (!checkPreconditions(parameters)) {
 		setResult("FAILURE","preconditions not satisfied",false);
-		action_server_->setAborted(result);
+		action_server_.setAborted(result_);
 		return;
 	}
-	if (handleMotionRequest(goal) {
+	action_management_msgs::ManageActionResultConstPtr motion_result=handleMotionRequest(goal);
+	if (motion_result->report.status=="OK") {
 		setPostconditions(parameters);
 		setResult("COMPLETED","",true);
-		action_server_.setSucceded(result_);
+		action_server_.setSucceeded(result_);
 	}
 	else {
-		setResult("FAILED",motion_result.report.details,false);
+		setResult("FAILED",motion_result->report.details,false);
 		action_server_.setAborted(result_);
 	}
 }

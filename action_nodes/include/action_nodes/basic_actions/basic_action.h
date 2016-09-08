@@ -5,8 +5,8 @@
 
 class BasicAction:public ExecutableAction {
 public:
-	BasicAction(string action_name);
-	void execute(const shary3_msgs::ManageActionGoalConstPtr& goal);
+	BasicAction(string action_name, ros::NodeHandle node_handle);
+	void execute(const action_management_msgs::ManageActionGoalConstPtr& goal);
 
 };
 

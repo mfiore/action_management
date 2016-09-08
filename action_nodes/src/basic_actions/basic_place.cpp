@@ -1,7 +1,7 @@
 
-#include <action_nodes/basic_actions/BasicPlace.h>
+#include <action_nodes/basic_actions/basic_place.h>
 
-BasicPlace::BasicPlace():BasicAction("BasicPlace") {
+BasicPlace::BasicPlace(ros::NodeHandle node_handle):BasicAction("place",node_handle) {
 	parameters_.push_back("main_object");
 	parameters_.push_back("support_object");
 }
@@ -14,10 +14,10 @@ bool BasicPlace::checkPreconditions(StringMap parameters) {
 	srv.request.query.value.push_back(parameters["main_object"]);
 
 	if (database_query_client_.call(srv)) {
-		return response.result.size()<2;
+		return srv.response.result.size()<2;
 	}
 	else {
-		ROS_ERROR("%s Failed to contact db",action_name_);
+		ROS_ERROR("%s Failed to contact db",action_name_.c_str());
 	}
 }
 
@@ -29,13 +29,13 @@ void BasicPlace::setPostconditions(StringMap parameters) {
 	f.value.push_back(parameters["main_object"]);
 
 	situation_assessment_msgs::DatabaseRequest srv;
-	srv.fact_list.push_back(f);
+	srv.request.fact_list.push_back(f);
 	if (!database_remove_facts_client_.call(srv)) {
-		ROS_ERROR("%s failed to contact db");
+		ROS_ERROR("%s failed to contact db",action_name_.c_str());
 	} 
 }
 
-bool BasicPlace::shouldStop(StringMap parameters) {
-	return false;
-}
+// bool BasicPlace::shouldStop(StringMap parameters) {
+	// return false;
+// }
 

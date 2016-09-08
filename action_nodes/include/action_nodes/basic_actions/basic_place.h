@@ -3,14 +3,14 @@
 
 #include <ros/ros.h>
 
-#include <action_nodes/BasicAction.h>
+#include <action_nodes/basic_actions/basic_action.h>
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib/client/simple_action_client.h>
-#include <situation_assessment_msgs::PutObjectInHand.h>
+#include <situation_assessment_msgs/PutObjectInHand.h>
 
-class Place: public BasicAction {
+class BasicPlace: public BasicAction {
 	public:
-	Place();
+	BasicPlace(ros::NodeHandle node_handle);
 
 protected:
 	bool checkPreconditions(StringMap parameters);

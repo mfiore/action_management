@@ -39,6 +39,8 @@ protected:
 	ros::ServiceClient database_add_facts_client_;
 	ros::ServiceClient database_remove_facts_client_;
 	ros::ServiceServer get_parameters_server;
+	ros::ServiceServer check_preconditions_server_;
+	ros::ServiceServer set_postconditions_server_;
 
 private:
 	bool getParameters(action_management_msgs::GetActionParameters::Request  &req,

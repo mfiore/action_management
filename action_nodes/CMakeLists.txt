@@ -104,15 +104,21 @@ include_directories(
  )
 
 ## Declare a cpp executable
-# add_executable(action_executor_node src/action_executor_node.cpp)
+add_executable(basic_actions src/main.cpp src/Action.cpp src/ExecutableAction.cpp src/basic_actions/basic_action.cpp
+src/basic_actions/basic_pick.cpp src/basic_actions/basic_place.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(action_nodes_lib common_msgs_generate_messages_cpp situation_assessment_msgs_generate_messages_cpp 
 action_management_msgs_generate_messages_cpp)
+add_dependencies(basic_actions common_msgs_generate_messages_cpp situation_assessment_msgs_generate_messages_cpp 
+action_management_msgs_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(action_nodes_lib
+   ${catkin_LIBRARIES}
+ )
+ target_link_libraries(basic_actions
    ${catkin_LIBRARIES}
  )
 
