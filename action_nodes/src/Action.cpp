@@ -19,23 +19,33 @@ Action::Action(string action_name,ros::NodeHandle node_handle):action_name_(acti
 //	get_parameters_server_=node_handle_.advertiseService(,
 	// boost::bind(&Action::getParameters,this,_1,_2));
 
+	// check_preconditions_server_=node_handle_.advertiseService(preconditionsServiceName,
+	// boost::bind(&Action::checkPreconditionsService,this,_1,_2));
+
+
 	check_preconditions_server_=node_handle_.advertiseService(preconditionsServiceName,
-	boost::bind(&Action::checkPreconditionsService,this,_1,_2));
+	&Action::checkPreconditionsService,this);
+
 		// check_preconditions_server_=node_handle_.advertiseService(preconditionsServiceName,
 	// &Action::checkPreconditions);
-	// set_postconditions_server_=node_handle_.advertiseService(postconditionsServiceName,
-		// boost::bind(&Action::setPostconditionsService,this,_1));
+	set_postconditions_server_=node_handle_.advertiseService(postconditionsServiceName,
+		&Action::setPostconditionsService,this);
 	ROS_INFO("%s Started services",action_name.c_str());
 
 
 	ROS_INFO("%s connecting to database",action_name.c_str());
-	database_query_client_=node_handle_.serviceClient<situation_assessment_msgs::QueryDatabase>("/situation_assessment/simple_database");
+	database_query_client_=node_handle_.serviceClient<situation_assessment_msgs::QueryDatabase>("/situation_assessment/query_database");
 	database_add_facts_client_=node_handle_.serviceClient<situation_assessment_msgs::DatabaseRequest>("/situation_assessment/add_facts");
 	database_remove_facts_client_=node_handle_.serviceClient<situation_assessment_msgs::DatabaseRequest>("/situation_assessment/remove_facts");
+	
+	database_query_client_.waitForExistence();
+	database_add_facts_client_.waitForExistence();
+	database_remove_facts_client_.waitForExistence();
 	ROS_INFO("%s connected",action_name.c_str());
 }
 bool Action::checkPreconditionsService(action_management_msgs::CheckPreconditions::Request &req,
 	action_management_msgs::CheckPreconditions::Response &res) {
+	ROS_INFO("ACTION - received request to check preconditions");
 	StringMap parameters=extractParametersFromMsg(req.parameters.parameter_list);
 	res.value=checkPreconditions(parameters);
 	return true;
@@ -62,6 +72,7 @@ StringMap Action::extractParametersFromMsg(vector<common_msgs::Parameter> parame
 
 bool Action::setPostconditionsService(action_management_msgs::SetPostconditions::Request &req,
 	action_management_msgs::SetPostconditions::Response &res) {
+	ROS_INFO("%s - Setting postconditions", action_name_.c_str());
 	setPostconditions(extractParametersFromMsg(req.parameters.parameter_list));
 	res.value=true;
 	return true;

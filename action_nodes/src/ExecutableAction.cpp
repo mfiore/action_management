@@ -9,7 +9,7 @@ ExecutableAction::ExecutableAction(string action_name, ros::NodeHandle node_hand
  	string up_action=boost::to_upper_copy(action_name);
 
  	ROS_INFO("%s Waiting for motion to be ready",up_action.c_str());
- 	motion_execution_client_.waitForServer();
+ 	// motion_execution_client_.waitForServer();
  	action_server_.start();
  	ROS_INFO("%s Started action server",up_action.c_str());
 }
