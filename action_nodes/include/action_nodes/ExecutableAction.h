@@ -37,8 +37,6 @@ protected:
 	Server action_server_;
 	Client motion_execution_client_;
 
-	string robot_name_;
-
 	void setResult(string status, string details, bool ok);
 	void sendFeedback(string status, string details);
 

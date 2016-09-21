@@ -22,6 +22,9 @@ Action::Action(string action_name,ros::NodeHandle node_handle):action_name_(acti
 	// check_preconditions_server_=node_handle_.advertiseService(preconditionsServiceName,
 	// boost::bind(&Action::checkPreconditionsService,this,_1,_2));
 
+	node_handle_.getParam("situation_assessment/robot_name",robot_name_);
+
+	ROS_INFO("%s robot name is %s",action_name_.c_str(),robot_name_.c_str());
 
 	check_preconditions_server_=node_handle_.advertiseService(preconditionsServiceName,
 	&Action::checkPreconditionsService,this);
@@ -37,15 +40,18 @@ Action::Action(string action_name,ros::NodeHandle node_handle):action_name_(acti
 	database_query_client_=node_handle_.serviceClient<situation_assessment_msgs::QueryDatabase>("/situation_assessment/query_database");
 	database_add_facts_client_=node_handle_.serviceClient<situation_assessment_msgs::DatabaseRequest>("/situation_assessment/add_facts");
 	database_remove_facts_client_=node_handle_.serviceClient<situation_assessment_msgs::DatabaseRequest>("/situation_assessment/remove_facts");
+	database_set_facts_client_=node_handle_.serviceClient<situation_assessment_msgs::DatabaseRequest>("/situation_assessment/set_facts");
 	
 	database_query_client_.waitForExistence();
 	database_add_facts_client_.waitForExistence();
 	database_remove_facts_client_.waitForExistence();
+	database_set_facts_client_.waitForExistence();
+
 	ROS_INFO("%s connected",action_name.c_str());
 }
 bool Action::checkPreconditionsService(action_management_msgs::CheckPreconditions::Request &req,
 	action_management_msgs::CheckPreconditions::Response &res) {
-	ROS_INFO("ACTION - received request to check preconditions");
+	// ROS_INFO("ACTION - received request to check preconditions");
 	StringMap parameters=extractParametersFromMsg(req.parameters.parameter_list);
 	res.value=checkPreconditions(parameters);
 	return true;
@@ -58,6 +64,13 @@ bool Action::getParameters(action_management_msgs::GetActionParameters::Request 
 	}
 	return true;
 
+}
+
+bool Action::checkParameterPresence(StringMap request_parameters) {
+	for (string p: parameters_) {
+		if (request_parameters.find(p)==request_parameters.end()) return false;
+	}
+	return true;
 }
 
 StringMap Action::extractParametersFromMsg(vector<common_msgs::Parameter> parameters) {
@@ -78,3 +91,47 @@ bool Action::setPostconditionsService(action_management_msgs::SetPostconditions:
 	return true;
 
 }
+
+string Action::queryDatabase(situation_assessment_msgs::Fact query) {
+
+	situation_assessment_msgs::QueryDatabase srv;
+	
+	srv.request.query=query;
+
+	if (!(database_query_client_.call(srv))) {
+		ROS_ERROR("%s Failed to contact db",action_name_.c_str());
+		return "";
+	}
+	if (srv.response.result.size()==0) {
+		ROS_ERROR("%s No answers in %s query",action_name_.c_str(),query.predicate[0].c_str());
+		return "";
+	} 
+	if (srv.response.result[0].value.size()==0) {
+		ROS_ERROR("%s No values in answer for %s query",action_name_.c_str(),query.predicate[0].c_str());
+	}
+	return srv.response.result[0].value[0];
+}
+
+void Action::setFacts(std::vector<situation_assessment_msgs::Fact> facts) {
+	situation_assessment_msgs::DatabaseRequest srv;
+	srv.request.fact_list=facts;
+	if (!database_set_facts_client_.call(srv)) {
+		ROS_ERROR("%s failed to contact db",action_name_.c_str());
+	} 
+}
+void Action::addFacts(std::vector<situation_assessment_msgs::Fact> facts) {
+	situation_assessment_msgs::DatabaseRequest srv;
+	srv.request.fact_list=facts;
+	if (!database_add_facts_client_.call(srv)) {
+		ROS_ERROR("%s failed to contact db",action_name_.c_str());
+	} 
+}
+void Action::removeFacts(std::vector<situation_assessment_msgs::Fact> facts) {
+	situation_assessment_msgs::DatabaseRequest srv;
+	srv.request.fact_list=facts;
+	if (!database_remove_facts_client_.call(srv)) {
+		ROS_ERROR("%s failed to contact db",action_name_.c_str());
+	} 
+}
+
+

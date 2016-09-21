@@ -9,6 +9,6 @@ int main(int argc, char ** argv) {
 	ROS_INFO("BASIC ACTIONS - started node");
 
 	BasicPick pick(node_handle);
-	// BasicPlace place(node_handle);
+	BasicPlace place(node_handle);
 	ros::spin();
 }

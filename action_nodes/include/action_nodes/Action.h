@@ -34,10 +34,19 @@ protected:
 	virtual void setPostconditions(StringMap parameters)=0;
 	StringMap extractParametersFromMsg(vector<common_msgs::Parameter> parameters);
 
+	string queryDatabase(situation_assessment_msgs::Fact query);
+	void setFacts(std::vector<situation_assessment_msgs::Fact> facts);
+	void addFacts(std::vector<situation_assessment_msgs::Fact> facts);
+	void removeFacts(std::vector<situation_assessment_msgs::Fact> facts);
+
+	bool checkParameterPresence(StringMap request_parameters);
+
+
 	string robot_name_;
 	ros::ServiceClient database_query_client_;
 	ros::ServiceClient database_add_facts_client_;
 	ros::ServiceClient database_remove_facts_client_;
+	ros::ServiceClient database_set_facts_client_;
 	ros::ServiceServer get_parameters_server;
 	ros::ServiceServer check_preconditions_server_;
 	ros::ServiceServer set_postconditions_server_;

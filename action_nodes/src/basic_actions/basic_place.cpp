@@ -3,14 +3,20 @@
 
 BasicPlace::BasicPlace(ros::NodeHandle node_handle):BasicAction("place",node_handle) {
 	parameters_.push_back("main_object");
-	parameters_.push_back("support_object");
+	parameters_.push_back("target");
+
+	put_object_in_hand_client_=node_handle_.serviceClient<situation_assessment_msgs::PutObjectInHand>("/situation_assessment/put_object_in_hand",1000);
+
 }
 
 bool BasicPlace::checkPreconditions(StringMap parameters) {
+	if (!checkParameterPresence(parameters)) return false;
+
+	
 	situation_assessment_msgs::QueryDatabase srv;
 	srv.request.query.model=robot_name_;
 	srv.request.query.subject=parameters["main_agent"];
-	srv.request.query.predicate.push_back("hasInHand");
+	srv.request.query.predicate.push_back("has");
 	srv.request.query.value.push_back(parameters["main_object"]);
 
 	if (database_query_client_.call(srv)) {
@@ -33,6 +39,15 @@ void BasicPlace::setPostconditions(StringMap parameters) {
 	if (!database_remove_facts_client_.call(srv)) {
 		ROS_ERROR("%s failed to contact db",action_name_.c_str());
 	} 
+	situation_assessment_msgs::PutObjectInHand srv_put;
+	srv_put.request.object=parameters["main_object"];
+	srv_put.request.agent=parameters["main_agent"];
+	srv_put.request.has_object=false;
+
+	if (!put_object_in_hand_client_.call(srv_put)) {
+		ROS_ERROR("%s failed to put object in hand",action_name_.c_str());
+	}
+
 }
 
 // bool BasicPlace::shouldStop(StringMap parameters) {

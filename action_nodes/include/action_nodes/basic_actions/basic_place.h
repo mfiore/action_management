@@ -15,6 +15,9 @@ class BasicPlace: public BasicAction {
 protected:
 	bool checkPreconditions(StringMap parameters);
 	void setPostconditions(StringMap parameters);
+
+private:
+	ros::ServiceClient put_object_in_hand_client_;
 };
 
 #endif
