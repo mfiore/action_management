@@ -30,19 +30,39 @@ bool BasicPick::checkPreconditions(StringMap parameters) {
 }
 
 void BasicPick::setPostconditions(StringMap parameters) {
+	string agent=parameters["main_agent"];
+	string object=parameters["main_object"];
+
 	situation_assessment_msgs::Fact f;
 
-	// ROS_INFO("BasicPick - robo tname is %s",robot_name_.c_str());
 	f.model=robot_name_;
-	f.subject=parameters["main_agent"];
+	f.subject=agent;
 	f.predicate.push_back("has");
-	f.value.push_back(parameters["main_object"]);
+	f.value.push_back(object);
 
-	situation_assessment_msgs::DatabaseRequest srv;
-	srv.request.fact_list.push_back(f);
-	if (!database_add_facts_client_.call(srv)) {
-		ROS_ERROR("%s failed to contact db",action_name_.c_str());
-	} 
+	std::vector<situation_assessment_msgs::Fact> add_facts={f};
+	addFacts(add_facts);
+
+	situation_assessment_msgs::Fact query_location;
+	query_location.model=robot_name_;
+	query_location.subject=object;
+	query_location.predicate.push_back("at");
+
+	std::string location=queryDatabase(query_location);
+
+	if (location=="") {
+		ROS_WARN("PICK failed to get location of object");
+	}
+
+	situation_assessment_msgs::Fact remove_location_f;
+	remove_location_f.model=robot_name_;	
+	remove_location_f.subject=object;	
+	remove_location_f.predicate.push_back("at");	
+	remove_location_f.value.push_back(location);	
+
+	std::vector<situation_assessment_msgs::Fact> remove_facts={remove_location_f};
+
+	removeFacts(remove_facts);
 
 	situation_assessment_msgs::PutObjectInHand srv_put;
 	srv_put.request.object=parameters["main_object"];

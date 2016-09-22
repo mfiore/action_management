@@ -34,17 +34,23 @@ bool Place::checkPreconditions(StringMap parameters) {
 }
 
 void Place::setPostconditions(StringMap parameters) {
-	situation_assessment_msgs::Fact f;
-	f.model=robot_name_;
-	f.subject=parameters["main_agent"];
-	f.predicate.push_back("has");
-	f.value.push_back(parameters["main_object"]);
+	situation_assessment_msgs::Fact f1,f2;
+	f1.model=robot_name_;
+	f1.subject=parameters["main_agent"];
+	f1.predicate.push_back("has");
+	f1.value.push_back(parameters["main_object"]);
+
+	f2.model=robot_name_;
+	f2.subject=parameters.at("main_agent");
+	f2.predicate.push_back("at");
+	f2.value=parameters.at("target");
 
 	situation_assessment_msgs::DatabaseRequest srv;
-	srv.request.fact_list.push_back(f);
+	srv.request.fact_list.push_back(f1);
 	if (!database_remove_facts_client_.call(srv)) {
 		ROS_ERROR("PLACE failed to contact db");
 	} 
+
 
 	if (parameters["main_agent"]!=robot_name_) {
 		situation_assessment_msgs::PutObjectInHand put_object_in_hand_srv;

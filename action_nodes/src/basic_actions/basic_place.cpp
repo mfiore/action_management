@@ -20,7 +20,7 @@ bool BasicPlace::checkPreconditions(StringMap parameters) {
 	srv.request.query.value.push_back(parameters["main_object"]);
 
 	if (database_query_client_.call(srv)) {
-		return srv.response.result.size()<2;
+		return srv.response.result.size()>0;
 	}
 	else {
 		ROS_ERROR("%s Failed to contact db",action_name_.c_str());
@@ -28,17 +28,33 @@ bool BasicPlace::checkPreconditions(StringMap parameters) {
 }
 
 void BasicPlace::setPostconditions(StringMap parameters) {
-	situation_assessment_msgs::Fact f;
-	f.model=robot_name_;
-	f.subject=parameters["main_agent"];
-	f.predicate.push_back("has");
-	f.value.push_back(parameters["main_object"]);
+	string agent=parameters["main_agent"];
+	string object=parameters["main_object"];
+	string target=parameters["target"];
 
-	situation_assessment_msgs::DatabaseRequest srv;
-	srv.request.fact_list.push_back(f);
-	if (!database_remove_facts_client_.call(srv)) {
-		ROS_ERROR("%s failed to contact db",action_name_.c_str());
-	} 
+	std::vector<situation_assessment_msgs::Fact> remove_facts,add_facts;
+
+	situation_assessment_msgs::Fact remove_has_f;
+	remove_has_f.model=robot_name_;
+	remove_has_f.subject=agent;
+	remove_has_f.predicate.push_back("has");
+	remove_has_f.value.push_back(object);
+
+	remove_facts={remove_has_f};
+
+	removeFacts(remove_facts);
+
+	situation_assessment_msgs::Fact add_at_f;
+	add_at_f.model=robot_name_;
+	add_at_f.subject=object;
+	add_at_f.predicate.push_back("at");
+	add_at_f.value.push_back(target);
+
+	add_facts={add_at_f};
+
+	addFacts(add_facts);
+
+
 	situation_assessment_msgs::PutObjectInHand srv_put;
 	srv_put.request.object=parameters["main_object"];
 	srv_put.request.agent=parameters["main_agent"];
