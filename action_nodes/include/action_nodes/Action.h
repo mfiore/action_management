@@ -35,6 +35,7 @@ protected:
 	StringMap extractParametersFromMsg(vector<common_msgs::Parameter> parameters);
 
 	string queryDatabase(situation_assessment_msgs::Fact query);
+	vector<string> queryDatabaseComplete(situation_assessment_msgs::Fact query);
 	void setFacts(std::vector<situation_assessment_msgs::Fact> facts);
 	void addFacts(std::vector<situation_assessment_msgs::Fact> facts);
 	void removeFacts(std::vector<situation_assessment_msgs::Fact> facts);

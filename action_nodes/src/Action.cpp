@@ -112,6 +112,29 @@ string Action::queryDatabase(situation_assessment_msgs::Fact query) {
 	return srv.response.result[0].value[0];
 }
 
+std::vector<std::string> Action::queryDatabaseComplete(situation_assessment_msgs::Fact query) {
+
+	situation_assessment_msgs::QueryDatabase srv;
+	
+	srv.request.query=query;
+
+	vector<string> null_result;
+
+	if (!(database_query_client_.call(srv))) {
+		ROS_ERROR("%s Failed to contact db",action_name_.c_str());
+		return null_result;
+	}
+	if (srv.response.result.size()==0) {
+		ROS_ERROR("%s No answers in %s query",action_name_.c_str(),query.predicate[0].c_str());
+		return null_result;
+	} 
+	if (srv.response.result[0].value.size()==0) {
+		ROS_ERROR("%s No values in answer for %s query",action_name_.c_str(),query.predicate[0].c_str());
+		return null_result;
+	}
+	return srv.response.result[0].value;
+}
+
 void Action::setFacts(std::vector<situation_assessment_msgs::Fact> facts) {
 	situation_assessment_msgs::DatabaseRequest srv;
 	srv.request.fact_list=facts;
