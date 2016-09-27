@@ -13,20 +13,27 @@ bool BasicPick::checkPreconditions(StringMap parameters) {
 	// ROS_INFO("%s - checking preconditions",action_name_.c_str());
 
  	if (!checkParameterPresence(parameters)) return false;
+ 	string agent=parameters["main_agent"];
+ 	string object=parameters["main_object"];
 
-	situation_assessment_msgs::QueryDatabase srv;
-	srv.request.query.model=robot_name_;
-	srv.request.query.subject=parameters["main_agent"];
-	srv.request.query.predicate.push_back("has");
+ 	situation_assessment_msgs::Fact f_loc;
+ 	f_loc.model=robot_name_;
+ 	f_loc.subject=agent;
+ 	f_loc.predicate.push_back("isInArea");
 
-	if (database_query_client_.call(srv)) {
-		// ROS_INFO("%s - response is %d",action_name_.c_str(),srv.response.result.size()<2);
-		return srv.response.result.size()==0;
-	}
-	else {
-		ROS_ERROR("%s Failed to contact db",action_name_.c_str());
-		return false;
-	}
+ 	std::vector<string> agent_areas=queryDatabaseComplete(f_loc);
+
+ 	f_loc.subject=object;
+
+ 	std::vector<string> object_areas=queryDatabaseComplete(f_loc);
+
+ 	situation_assessment_msgs::Fact f_has;
+ 	f_has.model=robot_name_;
+ 	f_has.subject=parameters["main_agent"];
+ 	f_has.predicate.push_back("has");
+
+ 	string r=queryDatabase(f_has);
+ 	return r=="" && agent_areas==object_areas;
 }
 
 void BasicPick::setPostconditions(StringMap parameters) {
@@ -43,26 +50,30 @@ void BasicPick::setPostconditions(StringMap parameters) {
 	std::vector<situation_assessment_msgs::Fact> add_facts={f};
 	addFacts(add_facts);
 
-	situation_assessment_msgs::Fact query_location;
-	query_location.model=robot_name_;
-	query_location.subject=object;
-	query_location.predicate.push_back("at");
+	// situation_assessment_msgs::Fact query_location;
+	// query_location.model=robot_name_;
+	// query_location.subject=object;
+	// query_location.predicate.push_back("isInArea");
+	// query_location.value.push_back("agent");
 
-	std::string location=queryDatabase(query_location);
+	// std::vector<situation_assessment_msgs::Fact> set_facts={query_location};
+	// setFacts(set_facts);
 
-	if (location=="") {
-		ROS_WARN("PICK failed to get location of object");
-	}
+	// std::string location=queryDatabase(query_location);
 
-	situation_assessment_msgs::Fact remove_location_f;
-	remove_location_f.model=robot_name_;	
-	remove_location_f.subject=object;	
-	remove_location_f.predicate.push_back("at");	
-	remove_location_f.value.push_back(location);	
+	// if (location=="") {
+	// 	ROS_WARN("PICK failed to get location of object");
+	// }
 
-	std::vector<situation_assessment_msgs::Fact> remove_facts={remove_location_f};
+	// situation_assessment_msgs::Fact remove_location_f;
+	// remove_location_f.model=robot_name_;	
+	// remove_location_f.subject=object;	
+	// remove_location_f.predicate.push_back("at");	
+	// remove_location_f.value.push_back(location);	
 
-	removeFacts(remove_facts);
+	// std::vector<situation_assessment_msgs::Fact> remove_facts={remove_location_f};
+
+	// removeFacts(remove_facts);
 
 	situation_assessment_msgs::PutObjectInHand srv_put;
 	srv_put.request.object=parameters["main_object"];

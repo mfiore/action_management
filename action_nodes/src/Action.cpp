@@ -103,7 +103,7 @@ string Action::queryDatabase(situation_assessment_msgs::Fact query) {
 		return "";
 	}
 	if (srv.response.result.size()==0) {
-		ROS_ERROR("%s No answers in %s query",action_name_.c_str(),query.predicate[0].c_str());
+		// ROS_ERROR("%s No answers in %s query",action_name_.c_str(),query.predicate[0].c_str());
 		return "";
 	} 
 	if (srv.response.result[0].value.size()==0) {
@@ -125,7 +125,7 @@ std::vector<std::string> Action::queryDatabaseComplete(situation_assessment_msgs
 		return null_result;
 	}
 	if (srv.response.result.size()==0) {
-		ROS_ERROR("%s No answers in %s query",action_name_.c_str(),query.predicate[0].c_str());
+		// ROS_ERROR("%s No answers in %s query",action_name_.c_str(),query.predicate[0].c_str());
 		return null_result;
 	} 
 	if (srv.response.result[0].value.size()==0) {

@@ -12,19 +12,29 @@ BasicPlace::BasicPlace(ros::NodeHandle node_handle):BasicAction("place",node_han
 bool BasicPlace::checkPreconditions(StringMap parameters) {
 	if (!checkParameterPresence(parameters)) return false;
 
-	
-	situation_assessment_msgs::QueryDatabase srv;
-	srv.request.query.model=robot_name_;
-	srv.request.query.subject=parameters["main_agent"];
-	srv.request.query.predicate.push_back("has");
-	srv.request.query.value.push_back(parameters["main_object"]);
+	string agent=parameters["main_agent"];
+	string object=parameters["main_object"];
+	string target=parameters["target"];
 
-	if (database_query_client_.call(srv)) {
-		return srv.response.result.size()>0;
-	}
-	else {
-		ROS_ERROR("%s Failed to contact db",action_name_.c_str());
-	}
+	situation_assessment_msgs::Fact f_loc;
+	f_loc.model=robot_name_;
+	f_loc.subject=agent;
+	f_loc.predicate.push_back("isInArea");
+
+	std::vector<string> agent_areas=queryDatabaseComplete(f_loc);
+
+	f_loc.subject=object;
+
+	std::vector<string> object_areas=queryDatabaseComplete(f_loc);
+
+	situation_assessment_msgs::Fact f_has;
+	f_has.model=robot_name_;
+	f_has.subject=agent;
+	f_has.predicate.push_back("has");
+
+	string human_object=queryDatabase(f_has);
+
+	return agent_areas==object_areas && human_object!="";
 }
 
 void BasicPlace::setPostconditions(StringMap parameters) {
@@ -44,15 +54,15 @@ void BasicPlace::setPostconditions(StringMap parameters) {
 
 	removeFacts(remove_facts);
 
-	situation_assessment_msgs::Fact add_at_f;
-	add_at_f.model=robot_name_;
-	add_at_f.subject=object;
-	add_at_f.predicate.push_back("at");
-	add_at_f.value.push_back(target);
+	// situation_assessment_msgs::Fact add_at_f;
+	// add_at_f.model=robot_name_;
+	// add_at_f.subject=object;
+	// add_at_f.predicate.push_back("isInArea");
+	// add_at_f.value.push_back(target);
 
-	add_facts={add_at_f};
+	// add_facts={add_at_f};
 
-	addFacts(add_facts);
+	// addFacts(add_facts);
 
 
 	situation_assessment_msgs::PutObjectInHand srv_put;
