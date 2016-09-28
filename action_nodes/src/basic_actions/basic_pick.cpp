@@ -19,13 +19,13 @@ bool BasicPick::checkPreconditions(StringMap parameters) {
  	situation_assessment_msgs::Fact f_loc;
  	f_loc.model=robot_name_;
  	f_loc.subject=agent;
- 	f_loc.predicate.push_back("isInArea");
+ 	f_loc.predicate.push_back("isAt");
 
- 	std::vector<string> agent_areas=queryDatabaseComplete(f_loc);
+ 	std::string agent_at=queryDatabase(f_loc);
 
  	f_loc.subject=object;
 
- 	std::vector<string> object_areas=queryDatabaseComplete(f_loc);
+ 	std::string object_at=queryDatabase(f_loc);
 
  	situation_assessment_msgs::Fact f_has;
  	f_has.model=robot_name_;
@@ -33,7 +33,7 @@ bool BasicPick::checkPreconditions(StringMap parameters) {
  	f_has.predicate.push_back("has");
 
  	string r=queryDatabase(f_has);
- 	return r=="" && agent_areas==object_areas;
+ 	return r=="" && agent_at==object_at;
 }
 
 void BasicPick::setPostconditions(StringMap parameters) {

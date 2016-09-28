@@ -19,13 +19,13 @@ bool BasicPlace::checkPreconditions(StringMap parameters) {
 	situation_assessment_msgs::Fact f_loc;
 	f_loc.model=robot_name_;
 	f_loc.subject=agent;
-	f_loc.predicate.push_back("isInArea");
+	f_loc.predicate.push_back("isAt");
 
-	std::vector<string> agent_areas=queryDatabaseComplete(f_loc);
+	std::string agent_areas=queryDatabase(f_loc);
 
-	f_loc.subject=object;
+	f_loc.subject=target;
 
-	std::vector<string> object_areas=queryDatabaseComplete(f_loc);
+	std::string object_areas=queryDatabase(f_loc);
 
 	situation_assessment_msgs::Fact f_has;
 	f_has.model=robot_name_;
