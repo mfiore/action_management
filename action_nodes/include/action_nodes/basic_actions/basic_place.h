@@ -7,6 +7,7 @@
 #include <actionlib/server/simple_action_server.h>
 #include <actionlib/client/simple_action_client.h>
 #include <situation_assessment_msgs/PutObjectInHand.h>
+#include <situation_assessment_msgs/PlaceObject.h>
 
 class BasicPlace: public BasicAction {
 	public:
@@ -18,6 +19,7 @@ protected:
 
 private:
 	ros::ServiceClient put_object_in_hand_client_;
+	ros::ServiceClient place_object_client_;
 };
 
 #endif

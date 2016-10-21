@@ -18,7 +18,7 @@ bool BasicPick::checkPreconditions(StringMap parameters) {
 
  	situation_assessment_msgs::Fact f_loc;
  	f_loc.model=robot_name_;
- 	f_loc.subject=agent;
+ 	f_loc.subject=agent+"_torso";
  	f_loc.predicate.push_back("isAt");
 
  	std::string agent_at=queryDatabase(f_loc);
